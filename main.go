@@ -28,6 +28,7 @@ const (
 	FOLDER_CACHE_NAME = "bw-items-folders"
 	WORKFLOW_NAME     = "bitwarden-alfred-workflow"
 	AUTO_FETCH_CACHE  = "auto-fetch"
+	LAST_USAGE_CACHE  = "last-usage"
 	SYNC_CACHE_NAME   = "sync-cache"
 )
 
@@ -122,13 +123,6 @@ func checkIfJobRuns() {
 		wf.SendFeedback()
 		return
 	}
-	if wf.IsRunning("cache") {
-		wf.Rerun(0.3)
-		wf.NewItem("Refreshing Bitwarden cache…").
-			Icon(ReloadIcon())
-		wf.SendFeedback()
-		return
-	}
 	if wf.IsRunning("icons") {
 		wf.Rerun(0.3)
 		wf.NewItem("Refreshing Icon cache…").
@@ -183,7 +177,7 @@ func run() {
 
 	checkIfJobRuns()
 
-	if !wf.IsRunning("cache") && !wf.IsRunning("sync") && !wf.IsRunning("icons") {
+	if !wf.IsRunning("sync") && !wf.IsRunning("icons") {
 		pidfilePath := fmt.Sprintf("/tmp/%s", WORKFLOW_NAME)
 		processName := WORKFLOW_NAME
 		pidHandler(pidfilePath)
@@ -249,6 +243,12 @@ func run() {
 		return
 	}
 
+	if opts.Icons {
+		log.Println("Start getting icons")
+		runGetIcons("", "")
+		return
+	}
+
 	if opts.Search {
 		log.Print("Number of flags", cli.NArg())
 		var argString []string
@@ -262,17 +262,6 @@ func run() {
 		}
 		log.Print(fmt.Sprintf("argstring is %q", strings.Join(argString, " ")))
 		searchAlfred(strings.Join(argString, " "))
-		return
-	}
-
-	if opts.Icons {
-		log.Println("Start getting icons")
-		runGetIcons("", "")
-		return
-	}
-
-	if opts.Cache {
-		runCache()
 		return
 	}
 
